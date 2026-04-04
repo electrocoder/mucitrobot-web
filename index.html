@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Mucit Robot</title>
+
+<style>
+    body {
+        margin: 0;
+        background: radial-gradient(circle at center, #0f2027, #000);
+        overflow: hidden;
+        font-family: Arial, sans-serif;
+        color: white;
+        text-align: center;
+    }
+
+    h1 {
+        position: absolute;
+        top: 30px;
+        width: 100%;
+        font-size: 32px;
+        letter-spacing: 2px;
+    }
+
+    canvas {
+        display: block;
+    }
+</style>
+</head>
+<body>
+
+<h1>MUCİT ROBOT</h1>
+<canvas id="canvas"></canvas>
+
+<script>
+const canvas = document.getElementById("canvas");
+const ctx = canvas.getContext("2d");
+
+canvas.width = window.innerWidth;
+canvas.height = window.innerHeight;
+
+let points = [];
+const radius = 200;
+const center = {
+    x: canvas.width / 2,
+    y: canvas.height / 2
+};
+
+const totalPoints = 800;
+
+// Küre noktaları oluştur
+for (let i = 0; i < totalPoints; i++) {
+    const theta = Math.random() * Math.PI * 2;
+    const phi = Math.acos((Math.random() * 2) - 1);
+
+    points.push({
+        x: radius * Math.sin(phi) * Math.cos(theta),
+        y: radius * Math.sin(phi) * Math.sin(theta),
+        z: radius * Math.cos(phi)
+    });
+}
+
+let angle = 0;
+
+function draw() {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+    angle += 0.01;
+
+    points.forEach(p => {
+        // Y ekseni etrafında döndür
+        let x = p.x * Math.cos(angle) - p.z * Math.sin(angle);
+        let z = p.x * Math.sin(angle) + p.z * Math.cos(angle);
+        let y = p.y;
+
+        const scale = 400 / (400 + z);
+        const x2d = x * scale + center.x;
+        const y2d = y * scale + center.y;
+
+        ctx.beginPath();
+        ctx.arc(x2d, y2d, 2, 0, Math.PI * 2);
+        ctx.fillStyle = "cyan";
+        ctx.fill();
+    });
+
+    // Bağlantı çizgileri (AI network hissi)
+    for (let i = 0; i < points.length; i += 5) {
+        for (let j = i + 1; j < points.length; j += 20) {
+            let dx = points[i].x - points[j].x;
+            let dy = points[i].y - points[j].y;
+            let dz = points[i].z - points[j].z;
+
+            let dist = Math.sqrt(dx*dx + dy*dy + dz*dz);
+
+            if (dist < 60) {
+                ctx.beginPath();
+                ctx.moveTo(
+                    points[i].x + center.x,
+                    points[i].y + center.y
+                );
+                ctx.lineTo(
+                    points[j].x + center.x,
+                    points[j].y + center.y
+                );
+                ctx.strokeStyle = "rgba(0,255,255,0.1)";
+                ctx.stroke();
+            }
+        }
+    }
+
+    requestAnimationFrame(draw);
+}
+
+draw();
+
+// Responsive
+window.addEventListener("resize", () => {
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+});
+</script>
+
+</body>
+</html>
