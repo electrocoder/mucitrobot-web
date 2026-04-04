@@ -6,118 +6,171 @@
 <title>Mucit Robot</title>
 
 <style>
-    body {
-        margin: 0;
-        background: radial-gradient(circle at center, #0f2027, #000);
-        overflow: hidden;
-        font-family: Arial, sans-serif;
-        color: white;
-        text-align: center;
-    }
+body {
+    margin: 0;
+    background: #020409;
+    color: white;
+    font-family: Arial, sans-serif;
+    overflow: hidden;
+}
 
-    h1 {
-        position: absolute;
-        top: 30px;
-        width: 100%;
-        font-size: 32px;
-        letter-spacing: 2px;
-    }
+/* HERO */
+.hero {
+    position: absolute;
+    z-index: 10;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    text-align: center;
+}
 
-    canvas {
-        display: block;
-    }
+.hero h1 {
+    font-size: 48px;
+    letter-spacing: 4px;
+    margin: 0;
+    color: cyan;
+    text-shadow: 0 0 20px cyan;
+}
+
+.hero p {
+    opacity: 0.7;
+    margin-top: 10px;
+}
+
+.buttons {
+    margin-top: 25px;
+}
+
+.btn {
+    padding: 12px 25px;
+    margin: 5px;
+    border: 1px solid cyan;
+    background: transparent;
+    color: cyan;
+    cursor: pointer;
+    transition: 0.3s;
+}
+
+.btn:hover {
+    background: cyan;
+    color: black;
+    box-shadow: 0 0 20px cyan;
+}
+
+canvas {
+    display: block;
+}
 </style>
 </head>
 <body>
 
-<h1>MUCİT ROBOT</h1>
-<canvas id="canvas"></canvas>
+<div class="hero">
+    <h1>MUCİT ROBOT</h1>
+    <p>Yapay Zeka & Robotik Teknolojiler</p>
+    <div class="buttons">
+        <button class="btn">Projeler</button>
+        <button class="btn">İletişim</button>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.min.js"></script>
 
 <script>
-const canvas = document.getElementById("canvas");
-const ctx = canvas.getContext("2d");
+const scene = new THREE.Scene();
 
-canvas.width = window.innerWidth;
-canvas.height = window.innerHeight;
+const camera = new THREE.PerspectiveCamera(
+    75,
+    window.innerWidth / window.innerHeight,
+    0.1,
+    1000
+);
 
-let points = [];
-const radius = 200;
-const center = {
-    x: canvas.width / 2,
-    y: canvas.height / 2
-};
+const renderer = new THREE.WebGLRenderer({ antialias: true });
+renderer.setSize(window.innerWidth, window.innerHeight);
+document.body.appendChild(renderer.domElement);
 
-const totalPoints = 800;
+// Küre
+const geometry = new THREE.SphereGeometry(2, 64, 64);
 
-// Küre noktaları oluştur
-for (let i = 0; i < totalPoints; i++) {
-    const theta = Math.random() * Math.PI * 2;
-    const phi = Math.acos((Math.random() * 2) - 1);
+const material = new THREE.PointsMaterial({
+    color: 0x00ffff,
+    size: 0.03
+});
 
-    points.push({
-        x: radius * Math.sin(phi) * Math.cos(theta),
-        y: radius * Math.sin(phi) * Math.sin(theta),
-        z: radius * Math.cos(phi)
-    });
+const sphere = new THREE.Points(geometry, material);
+scene.add(sphere);
+
+// Glow efekti (arka küre)
+const glowMaterial = new THREE.MeshBasicMaterial({
+    color: 0x00ffff,
+    transparent: true,
+    opacity: 0.05
+});
+
+const glowSphere = new THREE.Mesh(
+    new THREE.SphereGeometry(2.2, 32, 32),
+    glowMaterial
+);
+
+scene.add(glowSphere);
+
+// Particles
+const particlesGeometry = new THREE.BufferGeometry();
+const particlesCount = 1000;
+
+const posArray = new Float32Array(particlesCount * 3);
+
+for(let i = 0; i < particlesCount * 3; i++){
+    posArray[i] = (Math.random() - 0.5) * 20;
 }
 
-let angle = 0;
+particlesGeometry.setAttribute(
+    'position',
+    new THREE.BufferAttribute(posArray, 3)
+);
 
-function draw() {
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
+const particlesMaterial = new THREE.PointsMaterial({
+    size: 0.01,
+    color: 0x00ffff
+});
 
-    angle += 0.01;
+const particles = new THREE.Points(particlesGeometry, particlesMaterial);
+scene.add(particles);
 
-    points.forEach(p => {
-        // Y ekseni etrafında döndür
-        let x = p.x * Math.cos(angle) - p.z * Math.sin(angle);
-        let z = p.x * Math.sin(angle) + p.z * Math.cos(angle);
-        let y = p.y;
+camera.position.z = 5;
 
-        const scale = 400 / (400 + z);
-        const x2d = x * scale + center.x;
-        const y2d = y * scale + center.y;
+// Mouse kontrol
+let mouseX = 0;
+let mouseY = 0;
 
-        ctx.beginPath();
-        ctx.arc(x2d, y2d, 2, 0, Math.PI * 2);
-        ctx.fillStyle = "cyan";
-        ctx.fill();
-    });
+document.addEventListener("mousemove", (event) => {
+    mouseX = (event.clientX / window.innerWidth - 0.5) * 2;
+    mouseY = (event.clientY / window.innerHeight - 0.5) * 2;
+});
 
-    // Bağlantı çizgileri (AI network hissi)
-    for (let i = 0; i < points.length; i += 5) {
-        for (let j = i + 1; j < points.length; j += 20) {
-            let dx = points[i].x - points[j].x;
-            let dy = points[i].y - points[j].y;
-            let dz = points[i].z - points[j].z;
+// Animasyon
+function animate() {
+    requestAnimationFrame(animate);
 
-            let dist = Math.sqrt(dx*dx + dy*dy + dz*dz);
+    sphere.rotation.y += 0.003;
+    sphere.rotation.x += mouseY * 0.01;
 
-            if (dist < 60) {
-                ctx.beginPath();
-                ctx.moveTo(
-                    points[i].x + center.x,
-                    points[i].y + center.y
-                );
-                ctx.lineTo(
-                    points[j].x + center.x,
-                    points[j].y + center.y
-                );
-                ctx.strokeStyle = "rgba(0,255,255,0.1)";
-                ctx.stroke();
-            }
-        }
-    }
+    glowSphere.rotation.y += 0.002;
 
-    requestAnimationFrame(draw);
+    particles.rotation.y += 0.0005;
+
+    sphere.rotation.y += mouseX * 0.005;
+
+    renderer.render(scene, camera);
 }
 
-draw();
+animate();
 
 // Responsive
 window.addEventListener("resize", () => {
-    canvas.width = window.innerWidth;
-    canvas.height = window.innerHeight;
+    renderer.setSize(window.innerWidth, window.innerHeight);
+    camera.aspect = window.innerWidth / window.innerHeight;
+    camera.updateProjectionMatrix();
 });
 </script>
 
